@@ -776,11 +776,10 @@ void ALL_speed_OUT(void)
 	  switch(MBUS_ON_OFF)
 		{
 			  case 0x00:/*开机状态*/  
-					      PC_x_speed=0;
-								PC_y_speed=0;
-				        PC_z_speed=0;
+					          PC_x_speed=0;
+							  PC_y_speed=0;
+				              PC_z_speed=0;
 							  MBUS_TO_MotorSpeed();
-							  Sent_MotorSpeed_code();
 								break;
 				case 0x10:/*遥控器关机状态*/
 									x_speed=1000;
@@ -795,7 +794,6 @@ void ALL_speed_OUT(void)
 									  mm++;
 										Get_PC_Date();//获得3个轴的数据
 										PC_TO_MotorSpeed();
-									  Sent_MotorSpeed_code();
 										PC_Re_FLAG=0;
 								}
 								else
