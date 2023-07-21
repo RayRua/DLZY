@@ -8,6 +8,13 @@ int16_t Real_MotorSpeed4;
 int16_t Real_MotorSpeed5;
 int16_t Real_MotorSpeed6;
 
+uint16_t Motor_State1 = 0;
+uint16_t Motor_State2 = 0;
+uint16_t Motor_State3 = 0;
+uint16_t Motor_State4 = 0;
+uint16_t Motor_State5 = 0;
+uint16_t Motor_State6 = 0;
+
 u8 MotorSpeed_Re_Date[10];
 u8 MotorSpeed_Re_Count;
 u8 MotorSpeed_Re_Flag;
@@ -247,16 +254,16 @@ void Get_MotorSpeed_Re_Date(void)
 		if(MotorSpeed_Re_Flag==1)
 		{
 			
-				if((MotorSpeed_Re_Date[0]==0x5A)&&(MotorSpeed_Re_Date[2]==0x0A)&&(MotorSpeed_Re_Date[3]==0x00))
+				if((MotorSpeed_Re_Date[0]==0xAA)&&(MotorSpeed_Re_Date[2]==0x0A)&&(MotorSpeed_Re_Date[3]==0x00))
 				{
 					switch(MotorSpeed_Re_Date[1])
 					{
-						case 1:Real_MotorSpeed1=(MotorSpeed_Re_Date[6]<<8)+MotorSpeed_Re_Date[7];break;
-						case 2:Real_MotorSpeed2=(MotorSpeed_Re_Date[6]<<8)+MotorSpeed_Re_Date[7];break;
-						case 3:Real_MotorSpeed3=(MotorSpeed_Re_Date[6]<<8)+MotorSpeed_Re_Date[7];break;
-						case 4:Real_MotorSpeed4=(MotorSpeed_Re_Date[6]<<8)+MotorSpeed_Re_Date[7];break;
-						case 5:Real_MotorSpeed5=(MotorSpeed_Re_Date[6]<<8)+MotorSpeed_Re_Date[7];break;
-						case 6:Real_MotorSpeed6=(MotorSpeed_Re_Date[6]<<8)+MotorSpeed_Re_Date[7];break;
+						case 1:Real_MotorSpeed1=(MotorSpeed_Re_Date[6]<<8)+MotorSpeed_Re_Date[7];Motor_State1 = (MotorSpeed_Re_Date[4]<<8) + MotorSpeed_Re_Date[5];break;
+						case 2:Real_MotorSpeed2=(MotorSpeed_Re_Date[6]<<8)+MotorSpeed_Re_Date[7];Motor_State2 = (MotorSpeed_Re_Date[4]<<8) + MotorSpeed_Re_Date[5];break;
+						case 3:Real_MotorSpeed3=(MotorSpeed_Re_Date[6]<<8)+MotorSpeed_Re_Date[7];Motor_State3 = (MotorSpeed_Re_Date[4]<<8) + MotorSpeed_Re_Date[5];break;
+						case 4:Real_MotorSpeed4=(MotorSpeed_Re_Date[6]<<8)+MotorSpeed_Re_Date[7];Motor_State4 = (MotorSpeed_Re_Date[4]<<8) + MotorSpeed_Re_Date[5];break;
+						case 5:Real_MotorSpeed5=(MotorSpeed_Re_Date[6]<<8)+MotorSpeed_Re_Date[7];Motor_State5 = (MotorSpeed_Re_Date[4]<<8) + MotorSpeed_Re_Date[5];break;
+						case 6:Real_MotorSpeed6=(MotorSpeed_Re_Date[6]<<8)+MotorSpeed_Re_Date[7];Motor_State6 = (MotorSpeed_Re_Date[4]<<8) + MotorSpeed_Re_Date[5];break;
 						default:break;
 					
 					}
@@ -273,9 +280,9 @@ void USART3_IRQHandler(void)                	//串口3中断服务程序
     {
 				 MotorSpeed_Re_Date[MotorSpeed_Re_Count]=USART_ReceiveData(USART3);
 				 MotorSpeed_Re_Count++;
-				 if(MotorSpeed_Re_Date[0]==0x0F)
+				 if(MotorSpeed_Re_Date[0]==0xAA)
 				{
-						if(MotorSpeed_Re_Count>24)
+						if(MotorSpeed_Re_Count>10)
 						{
 									MotorSpeed_Re_Count=0;
 									MotorSpeed_Re_Flag=1;

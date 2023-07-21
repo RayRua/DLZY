@@ -23,6 +23,7 @@ extern u16 USART_RX_STA;         		//接收状态标记
 //如果想串口中断接收，请不要注释以下宏定义
 void USART1_Init(u32 bound);
 void USART1_SendOneByte(u8 dat);
+void Sent_Date_PC(void);
 void Get_PC_Date(void);
 #endif
 

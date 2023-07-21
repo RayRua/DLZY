@@ -70,8 +70,9 @@ int main(void)
 		/*每100毫秒执行*/
 		if(time_100ms_flag==1)													//每100毫秒执行一次
 		{
-			 Sent_MotorSpeed_code();	      							//发送8个电机值
+			  Sent_MotorSpeed_code();	      							//发送8个电机值
 			  Sent_SteeringMotor_Pozition();							//发送8个舵机值
+				Sent_Date_PC();
 			  time_100ms_flag=0;  
 				LED0=!LED0;																	//提示系统正在运行	
 				LED1=!LED1;																	//提示系统正在运行;

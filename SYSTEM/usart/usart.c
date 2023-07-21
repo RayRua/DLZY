@@ -17,6 +17,22 @@ extern u8  Batter_Current[2];			//电池实时电流
 extern u8  Batter_Capacity_Number;				//电池电量百分比
 extern u8  Batter_State[2];				//电池保护状态
 
+//轮子速度
+extern int16_t Real_MotorSpeed1;
+extern int16_t Real_MotorSpeed2;
+extern int16_t Real_MotorSpeed3;
+extern int16_t Real_MotorSpeed4;
+extern int16_t Real_MotorSpeed5;
+extern int16_t Real_MotorSpeed6;
+
+//轮子状态
+extern uint16_t Motor_State1;
+extern uint16_t Motor_State2;
+extern uint16_t Motor_State3;
+extern uint16_t Motor_State4;
+extern uint16_t Motor_State5;
+extern uint16_t Motor_State6;
+
 u8 PC_Sent_Date[62]={0};
 extern u16 Position1,Position2,Position3,Position4,Position5,Position6,Position7,Position8;
 
@@ -76,7 +92,7 @@ float PC_z_speed;
 void USART1_Init(u32 bound)
 	{
    //GPIO端口设置
-  GPIO_InitTypeDef GPIO_InitStructure;
+  	GPIO_InitTypeDef GPIO_InitStructure;
 	USART_InitTypeDef USART_InitStructure;
 	NVIC_InitTypeDef NVIC_InitStructure;
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA,ENABLE); //使能GPIOA时钟
@@ -124,30 +140,30 @@ void USART1_SendOneByte(u8 dat)
     USART1->DR = (u8) dat;
     while(USART_GetFlagStatus(USART1,USART_FLAG_TC) == RESET);
 }
-void Sent_Date_PC()
+void Sent_Date_PC(void)
 {
 	u8 i;
 	PC_Sent_Date[0]=0XAA;
 	PC_Sent_Date[1]=0X55;
 	PC_Sent_Date[2]=0X3e;
 	
-	PC_Sent_Date[3]=0X00; //1号轮码盘数低位
-	PC_Sent_Date[4]=0X00; //1号轮码盘数高位
+	PC_Sent_Date[3]=Real_MotorSpeed1&0xff; //1号轮码盘数低位
+	PC_Sent_Date[4]=Real_MotorSpeed1>>8; //1号轮码盘数高位
 	
-	PC_Sent_Date[5]=0X00; //2号轮码盘数低位
-	PC_Sent_Date[6]=0X00; //2号轮码盘数高位
+	PC_Sent_Date[5]=Real_MotorSpeed2&0xff; //2号轮码盘数低位
+	PC_Sent_Date[6]=Real_MotorSpeed2>>8; //2号轮码盘数高位
 	
-	PC_Sent_Date[7]=0X00; //3号轮码盘数低位
-	PC_Sent_Date[8]=0X00; //3号轮码盘数高位
+	PC_Sent_Date[7]=Real_MotorSpeed3&0xff; //3号轮码盘数低位
+	PC_Sent_Date[8]=Real_MotorSpeed3>>8; //3号轮码盘数高位
 	
-	PC_Sent_Date[9]=0X00; //4号轮码盘数高位
-	PC_Sent_Date[10]=0X00;//4号轮码盘数高位
+	PC_Sent_Date[9]=Real_MotorSpeed4&0xff; //4号轮码盘数高位
+	PC_Sent_Date[10]=Real_MotorSpeed4>>8;//4号轮码盘数高位
 	
-	PC_Sent_Date[11]=0X00;//5号轮码盘数高位
-	PC_Sent_Date[12]=0X00;//5号轮码盘数高位
+	PC_Sent_Date[11]=Real_MotorSpeed5&0xff;//5号轮码盘数高位
+	PC_Sent_Date[12]=Real_MotorSpeed5>>8;//5号轮码盘数高位
 	
-	PC_Sent_Date[13]=0X00;//6号轮码盘数高位
-	PC_Sent_Date[14]=0X00;//6号轮码盘数高位
+	PC_Sent_Date[13]=Real_MotorSpeed6&0xff;//6号轮码盘数高位
+	PC_Sent_Date[14]=Real_MotorSpeed6>>8;//6号轮码盘数高位
 	
 	PC_Sent_Date[15]=0X00;//--
 	PC_Sent_Date[16]=0X00;//--
@@ -164,54 +180,55 @@ void Sent_Date_PC()
 	PC_Sent_Date[22]=0;//通道5
 	PC_Sent_Date[23]=0;//通道6
 	
-	PC_Sent_Date[24]=0; //0 	正常				8 	温度保护
-											//2 	霍尔故障		9 	电流偏置故障
-											//3 	转把故障		10 	电压偏置故障
-											//5 	过电流保护	11 	母线电流偏置故障
-											//6 	过压保护		12 	堵转保护
-											//7 	欠压保护		13 	UART故障
-	PC_Sent_Date[25]=0;
-	PC_Sent_Date[26]=0;
-	PC_Sent_Date[27]=0;
-	PC_Sent_Date[28]=0;
-	PC_Sent_Date[29]=0;
-	PC_Sent_Date[30]=0;
-	PC_Sent_Date[31]=0;
+	//0 	正常			8 	温度保护
+	//2 	霍尔故障		9 	电流偏置故障
+	//3 	转把故障		10 	电压偏置故障
+	//5 	过电流保护	    11 	母线电流偏置故障
+	//6 	过压保护		12 	堵转保护
+	//7 	欠压保护		13 	UART故障
+	PC_Sent_Date[24]=Motor_State1&0xff; 		//1号轮状态			
+	PC_Sent_Date[25]=Motor_State2&0xff;			//2号轮状态	
+	PC_Sent_Date[26]=Motor_State3&0xff;			//3号轮状态	
+	PC_Sent_Date[27]=Motor_State4&0xff;			//4号轮状态	
+	PC_Sent_Date[28]=Motor_State5&0xff;			//5号轮状态	
+	PC_Sent_Date[29]=Motor_State6&0xff;			//6号轮状态	
+	PC_Sent_Date[30]=0;			//6轮系统默认为0
+	PC_Sent_Date[31]=0;			//6轮系统默认为0
 	
 	
-	PC_Sent_Date[32]=Position1&0x00ff;
-	PC_Sent_Date[33]=Position1>>8;
+	PC_Sent_Date[32]=Position1&0x00ff;	//1号轮舵机低位
+	PC_Sent_Date[33]=Position1>>8;		//1号轮舵机高位
 	
-	PC_Sent_Date[34]=Position2&0x00ff;
-	PC_Sent_Date[35]=Position2>>8;
+	PC_Sent_Date[34]=Position2&0x00ff;	//2号轮舵机低位
+	PC_Sent_Date[35]=Position2>>8;		//2号轮舵机低位
 	
-	PC_Sent_Date[36]=Position3&0x00ff;
-	PC_Sent_Date[37]=Position3>>8;
+	PC_Sent_Date[36]=Position3&0x00ff;	//3号轮舵机低位
+	PC_Sent_Date[37]=Position3>>8;		//3号轮舵机低位
 	
-	PC_Sent_Date[38]=Position4&0x00ff;
-	PC_Sent_Date[39]=Position4>>8;
+	PC_Sent_Date[38]=Position4&0x00ff;	//4号轮舵机低位
+	PC_Sent_Date[39]=Position4>>8;		//4号轮舵机低位
 	
-	PC_Sent_Date[40]=Position5&0x00ff;
-	PC_Sent_Date[41]=Position5>>8;
+	PC_Sent_Date[40]=Position5&0x00ff;	//5号轮舵机低位
+	PC_Sent_Date[41]=Position5>>8;		//5号轮舵机低位
 	
-	PC_Sent_Date[42]=Position6&0x00ff;
-	PC_Sent_Date[43]=Position6>>8;
+	PC_Sent_Date[42]=Position6&0x00ff;	//6号轮舵机低位
+	PC_Sent_Date[43]=Position6>>8;		//6号轮舵机低位
 	
-	PC_Sent_Date[44]=Position7&0x00ff;
-	PC_Sent_Date[45]=Position7>>8;
+	PC_Sent_Date[44]=0;					//6轮系统默认为0
+	PC_Sent_Date[45]=0;					//6轮系统默认为0
 	
-	PC_Sent_Date[46]=Position8&0x00ff;
-	PC_Sent_Date[47]=Position8>>8;
+	PC_Sent_Date[46]=0;					//6轮系统默认为0
+	PC_Sent_Date[47]=0;					//6轮系统默认为0
 	
-	PC_Sent_Date[48]=0X00;
-	PC_Sent_Date[49]=0X00;
+	PC_Sent_Date[48]=0X00;				//暂时没有这东西
+	PC_Sent_Date[49]=0X00;				//暂时没有这东西
 	
-	PC_Sent_Date[50]=0X00;//转向闭环检测
-	PC_Sent_Date[51]=0X00;//转向闭环检测
+	PC_Sent_Date[50]=0X00;				//转向闭环检测 暂无
+	PC_Sent_Date[51]=0X00;				//转向温度检测 暂无
 	
-	PC_Sent_Date[52]=0X00;//防撞
+	PC_Sent_Date[52]=0X00;				//防撞 暂无
 	
-	PC_Sent_Date[53]=MBUS_ON_OFF;//遥控器状态
+	PC_Sent_Date[53]=MBUS_ON_OFF;		//遥控器状态
 	
     PC_Sent_Date[54]=Batter_Voltage[1];	//电池电压
 	PC_Sent_Date[55]=Batter_Voltage[0];
