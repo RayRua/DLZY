@@ -51,7 +51,7 @@ int main(void)
 	LED1=1;
 	delay_ms(1000);
 	SysTick_Config(SystemCoreClock /1000);   					//配置时基准为1ms
-  Read_AS5600_State();															//配置和读取as5600中值和状态
+  	Read_AS5600_State();															//配置和读取as5600中值和状态
 
 	//memcpy(&x22,&yy1,4);
 	while(1) 
@@ -74,7 +74,7 @@ int main(void)
 			  Sent_SteeringMotor_Pozition();							//发送8个舵机值
 			  time_100ms_flag=0;  
 				LED0=!LED0;																	//提示系统正在运行	
-				LED1=!LED1;																	//提示系统正在运行	;
+				LED1=!LED1;																	//提示系统正在运行;
 		}
 		/*每5毫秒执行*/
 		if(time_5ms_flag==1)

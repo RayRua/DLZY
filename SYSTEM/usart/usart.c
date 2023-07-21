@@ -213,7 +213,7 @@ void Sent_Date_PC()
 	
 	PC_Sent_Date[53]=MBUS_ON_OFF;//遥控器状态
 	
-  PC_Sent_Date[54]=Batter_Voltage[1];	//电池电压
+    PC_Sent_Date[54]=Batter_Voltage[1];	//电池电压
 	PC_Sent_Date[55]=Batter_Voltage[0];
 	
 	PC_Sent_Date[56]=Batter_Current[1];//电池实时电流
@@ -223,13 +223,21 @@ void Sent_Date_PC()
 	PC_Sent_Date[58]=Batter_Capacity_Number;//电池容量百分比
 	
 	PC_Sent_Date[59]=Batter_State[1];  //电池保护状态
-		PC_Sent_Date[60]=Batter_State[0];//电池保护状态
+	PC_Sent_Date[60]=Batter_State[0];//电池保护状态
 		
 	PC_Sent_Date[61]=0XAA;   //异或校验
 	
-	for(i=0;i<54;i++)
+	//异或校验前清零
+	PC_Sent_Date[61] = 0x00;	
+	for(i = 0;i < 61; i++)					//异或校验
 	{
-			USART1_SendOneByte(PC_Sent_Date[i]);
+		PC_Sent_Date[61] ^= PC_Sent_Date[i]; 
+	}
+	
+	
+	for(i=0;i<62;i++)
+	{
+		USART1_SendOneByte(PC_Sent_Date[i]);
 	}
 }
 void Get_PC_Date(void)
