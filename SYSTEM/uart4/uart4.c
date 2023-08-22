@@ -2,7 +2,7 @@
 #include "uart4.h"	
 #include "uart5.h"	
 #include "string.h"
-
+#include "Bell.h"
 
 u8  MagneticEncoder_Se_Date[14] ={0X5A,0X0E,0X01,0X01,0X00,0X00,0X00,0X00,0XA5,0X00,0X00,0X06,0X00,0X69};//主机发送该指令，等待编码器返回参数
 u8  MagneticEncoder_Se_State[14]={0X5A,0X0E,0X01,0X01,0X00,0X00,0X00,0X00,0XA5,0X00,0X00,0X05,0X00,0X69};//主机发送该指令，等待编码器返回参数
@@ -156,6 +156,7 @@ void Read_AS5600_State(void)
 	{
 		if(step==0)
 		{
+				Bell();
 			  AS5600_Time_Flag=1;//留1秒的时间判断遥控器状态，进行调中，超时则跳出调中，进入询问调中参数状态
 				Get_Remote_channel_Date();		//获取当前遥控器的值;
 				if((x_speed<=210)&&(y_speed>=1790)&&(k_number>1790))//进入调中值状态
@@ -179,6 +180,7 @@ void Read_AS5600_State(void)
 				 if((As5600_MidValue1_State==1)&&(As5600_MidValue2_State==1)&&(As5600_MidValue3_State==1)
 				  &&(As5600_MidValue4_State==1)&&(As5600_MidValue5_State==1)&&(As5600_MidValue6_State==1))
 				 {
+					 Bell();
 					 while(1)
 					 {
 						step = 2;
@@ -245,7 +247,7 @@ void Read_AS5600_State(void)
 		}
 		else if(step==2)
 		{
-			
+				Bell();
 			  step=3;
 				break; //进入运行模式
 		}

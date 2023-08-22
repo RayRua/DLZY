@@ -8,22 +8,21 @@
 
 //数码管端口定义
 
-#define SEGS1 PDout(7)	// DS0
-#define SEGS2 PBout(3)	// DS1	 
+#define SER PBout(3)	// DS0
+#define RCLK PBout(4)	// DS1	 
+#define CLK  PBout(5)	// DS0
 
-#define SEGA  PBout(4)	// DS0
-#define SEGB  PBout(5)	// DS1	
-#define SEGC  PBout(6)	// DS0
-#define SEGD  PBout(7)	// DS1	
-#define SEGE  PBout(8)	// DS0
-#define SEGF  PBout(9)	// DS1	
-#define SEGG  PEout(0)	// DS0
-#define SEGDP PEout(1)	// DS1	
+#define A1  PBout(6)	// DS1	
+#define A2  PBout(7)	// DS0
+#define A3  PBout(8)	// DS1	
+#define A4  PBout(9)	// DS0
+
 
 
 void LED_Init(void); //初始化		 	
 void DigitalTube_LED_Init(void);
-void Seg_Display(u8 x);
+void SMG_Output(u8 data);
+void LED_Display(u32 seconds, u8 index);
 
 
 #endif
