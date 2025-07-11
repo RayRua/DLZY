@@ -10,14 +10,14 @@
       <TargetName>Target 1</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
-      <pCCUsed>5060750::V5.06 update 6 (build 750)::ARMCC</pCCUsed>
+      <pCCUsed>5060960::V5.06 update 7 (build 960)::.\ARM_Compiler_5.06u7</pCCUsed>
       <uAC6>0</uAC6>
       <TargetOption>
         <TargetCommonOption>
           <Device>STM32F407VETx</Device>
           <Vendor>STMicroelectronics</Vendor>
-          <PackID>Keil.STM32F4xx_DFP.2.5.0</PackID>
-          <PackURL>http://www.keil.com/pack</PackURL>
+          <PackID>Keil.STM32F4xx_DFP.2.17.1</PackID>
+          <PackURL>https://www.keil.com/pack/</PackURL>
           <Cpu>IRAM(0x20000000,0x20000) IRAM2(0x10000000,0x10000) IROM(0x08000000,0x80000) CPUTYPE("Cortex-M4") FPU2 CLOCK(12000000) ELITTLE</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
           <StartupFile></StartupFile>
@@ -185,6 +185,8 @@
             <uocXRam>0</uocXRam>
             <RvdsVP>2</RvdsVP>
             <RvdsMve>0</RvdsMve>
+            <RvdsCdeCp>0</RvdsCdeCp>
+            <nBranchProt>0</nBranchProt>
             <hadIRAM2>1</hadIRAM2>
             <hadIROM2>0</hadIROM2>
             <StupSel>8</StupSel>
@@ -325,7 +327,7 @@
             <uThumb>0</uThumb>
             <uSurpInc>0</uSurpInc>
             <uC99>1</uC99>
-            <uGnu>1</uGnu>
+            <uGnu>0</uGnu>
             <useXO>0</useXO>
             <v6Lang>1</v6Lang>
             <v6LangP>1</v6LangP>
@@ -338,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>STM32F40_41xxx,USE_STDPERIPH_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>.\CORE;.\SYSTEM\delay;.\SYSTEM\sys;.\SYSTEM\usart;.\USER;.\HARDWARE\LED;.\FWLIB\inc;.\USMART;.\HARDWARE\STMFLASH;.\SYSTEM\uart5;.\SYSTEM\usart2;.\SYSTEM\usart6;.\SYSTEM\uart4;.\SYSTEM\usart3;.\HARDWARE\BELL</IncludePath>
+              <IncludePath>.\CORE;.\SYSTEM\delay;.\SYSTEM\sys;.\SYSTEM\usart;.\USER;.\HARDWARE\LED;.\FWLIB\inc;.\USMART;.\HARDWARE\STMFLASH;.\SYSTEM\uart5;.\SYSTEM\usart2;.\SYSTEM\usart6;.\SYSTEM\uart4;.\SYSTEM\usart3;.\HARDWARE\BELL;.\DRIVER;.\APP;.\Middlewares\FreeRTOS\Source\include;.\CMSIS\Device\ST\STM32F4xx\Include;.\CMSIS\Include;.\Middlewares\FreeRTOS\Source\CMSIS_RTOS;.\Middlewares\FreeRTOS\Source\portable\RVDS\ARM_CM4F;.\DRIVER\wit_c_sdk</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -351,7 +353,7 @@
             <NoWarn>0</NoWarn>
             <uSurpInc>0</uSurpInc>
             <useXO>0</useXO>
-            <uClangAs>0</uClangAs>
+            <ClangAsOpt>4</ClangAsOpt>
             <VariousControls>
               <MiscControls></MiscControls>
               <Define></Define>
@@ -383,11 +385,6 @@
           <GroupName>USER</GroupName>
           <Files>
             <File>
-              <FileName>main.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\USER\main.c</FilePath>
-            </File>
-            <File>
               <FileName>stm32f4xx_it.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\USER\stm32f4xx_it.c</FilePath>
@@ -402,6 +399,46 @@
               <FileType>1</FileType>
               <FilePath>.\USER\angle_speed.c</FilePath>
             </File>
+            <File>
+              <FileName>err.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\USER\err.c</FilePath>
+            </File>
+            <File>
+              <FileName>main.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\USER\main.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_init.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\USER\bsp_init.c</FilePath>
+            </File>
+            <File>
+              <FileName>stmflash.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\HARDWARE\STMFLASH\stmflash.c</FilePath>
+            </File>
+            <File>
+              <FileName>FreeRTOSConfig.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\USER\FreeRTOSConfig.h</FilePath>
+            </File>
+            <File>
+              <FileName>freertos.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\USER\freertos.c</FilePath>
+            </File>
+            <File>
+              <FileName>watchdog.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\USER\watchdog.c</FilePath>
+            </File>
+            <File>
+              <FileName>pin.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\USER\pin.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -413,11 +450,6 @@
               <FilePath>.\HARDWARE\LED\led.c</FilePath>
             </File>
             <File>
-              <FileName>stmflash.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\HARDWARE\STMFLASH\stmflash.c</FilePath>
-            </File>
-            <File>
               <FileName>Bell.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\HARDWARE\BELL\Bell.c</FilePath>
@@ -427,6 +459,11 @@
         <Group>
           <GroupName>SYSTEM</GroupName>
           <Files>
+            <File>
+              <FileName>communicate.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\USER\communicate.c</FilePath>
+            </File>
             <File>
               <FileName>sys.c</FileName>
               <FileType>1</FileType>
@@ -466,6 +503,11 @@
               <FileName>usart6.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\SYSTEM\usart6\usart6.c</FilePath>
+            </File>
+            <File>
+              <FileName>CAN.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\SYSTEM\usart\CAN.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -537,6 +579,11 @@
               <FileType>1</FileType>
               <FilePath>.\FWLIB\src\stm32f4xx_tim.c</FilePath>
             </File>
+            <File>
+              <FileName>stm32f4xx_can.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\FWLIB\src\stm32f4xx_can.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -561,6 +608,139 @@
         </Group>
         <Group>
           <GroupName>README</GroupName>
+        </Group>
+        <Group>
+          <GroupName>DRIVER_MOTOR</GroupName>
+          <Files>
+            <File>
+              <FileName>Modbus_RTU_protocol.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\DRIVER\Modbus_RTU_protocol.c</FilePath>
+            </File>
+            <File>
+              <FileName>motor_d_ai.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\DRIVER\motor_d_ai.c</FilePath>
+            </File>
+            <File>
+              <FileName>motor_drv750.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\DRIVER\motor_drv750.c</FilePath>
+            </File>
+            <File>
+              <FileName>motor_config.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\DRIVER\motor_config.c</FilePath>
+            </File>
+            <File>
+              <FileName>motor_status.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\DRIVER\motor_status.h</FilePath>
+            </File>
+            <File>
+              <FileName>servo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\DRIVER\servo.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>APP</GroupName>
+          <Files>
+            <File>
+              <FileName>init_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\APP\init_task.c</FilePath>
+            </File>
+            <File>
+              <FileName>gimbal_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\APP\gimbal_task.c</FilePath>
+            </File>
+            <File>
+              <FileName>ins_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\APP\ins_task.c</FilePath>
+            </File>
+            <File>
+              <FileName>detect_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\APP\detect_task.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Middlewares/FreeRTOS</GroupName>
+          <Files>
+            <File>
+              <FileName>port.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\FreeRTOS\Source\portable\RVDS\ARM_CM4F\port.c</FilePath>
+            </File>
+            <File>
+              <FileName>heap_4.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\FreeRTOS\Source\portable\MemMang\heap_4.c</FilePath>
+            </File>
+            <File>
+              <FileName>cmsis_os.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\FreeRTOS\Source\CMSIS_RTOS\cmsis_os.c</FilePath>
+            </File>
+            <File>
+              <FileName>croutine.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\FreeRTOS\Source\croutine.c</FilePath>
+            </File>
+            <File>
+              <FileName>event_groups.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\FreeRTOS\Source\event_groups.c</FilePath>
+            </File>
+            <File>
+              <FileName>list.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\FreeRTOS\Source\list.c</FilePath>
+            </File>
+            <File>
+              <FileName>queue.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\FreeRTOS\Source\queue.c</FilePath>
+            </File>
+            <File>
+              <FileName>stream_buffer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\FreeRTOS\Source\stream_buffer.c</FilePath>
+            </File>
+            <File>
+              <FileName>tasks.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\FreeRTOS\Source\tasks.c</FilePath>
+            </File>
+            <File>
+              <FileName>timers.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Middlewares\FreeRTOS\Source\timers.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Algorithm</GroupName>
+        </Group>
+        <Group>
+          <GroupName>DRIVER_IMU</GroupName>
+          <Files>
+            <File>
+              <FileName>wit_c_sdk.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\DRIVER\wit_c_sdk\wit_c_sdk.c</FilePath>
+            </File>
+            <File>
+              <FileName>REG.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\DRIVER\wit_c_sdk\REG.h</FilePath>
+            </File>
+          </Files>
         </Group>
       </Groups>
     </Target>

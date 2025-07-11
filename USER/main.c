@@ -1,175 +1,84 @@
-#include "sys.h"
-#include "delay.h"  
-#include "usart.h" 
-#include "usart2.h" 
-#include "usart3.h" 
-#include "uart4.h"	
-#include "uart5.h" 
-#include "usart6.h" 
-#include "led.h"
-#include "angle_speed.h" 
-#include "usmart.h"
-#include "stmflash.h"
-#include "Bell.h"
+#include "bsp_init.h"
 
+#include "delay.h"
 
-u16 time_5ms_cnt;			           //5ms¶¨Ê±Ê±¼ä
-u16 time_5ms_flag;		           //5ms¶¨Ê±Ê±¼ä±êÖ¾Î»
-u16 time_100ms_cnt;			         //100ms¶¨Ê±Ê±¼ä
-u16 time_100ms_flag;		         //100ms¶¨Ê±Ê±¼ä±êÖ¾Î»
-u16 time_500ms_cnt;		           //500ms¶¨Ê±Ê±¼ä
-u16 time_500ms_flag;	           //500ms¶¨Ê±Ê±¼ä±êÖ¾Î»
-extern u8 Seg_Display_Flag;      //ÊıÂë¹ÜÏÔÊ¾ÇĞ»»±êÖ¾Î»
-extern u8 MagneticEncoder_ID_Number;  //AS5600´Å±àÂëÆ÷ID¼Ä´æÆ÷
+#include "motor_config.h"
+#include "ins_task.h"
 
-extern u8 AS5600_Time_Flag;//¿ªÊ¼¼ÆÊ±±êÖ¾Î»
-extern u16 AS5600_500ms_cnt;//µ÷ÖĞÖ¸Áî³¬Ê±¼ÆÊıÆ÷
-extern u8 step; //ÉÏµçÖ´ĞĞ²½Öè
-extern u8 Mbus_Time_Count_Flag;//MUBSÊÇ·ñÁ¬½Ó±êÖ¾Î»
-extern u16 Mbus_Time_500ms_cnt;//µ÷ÖĞÖ¸Áî³¬Ê±¼ÆÊıÆ÷
+#include "cmsis_os.h"
+#include "init_task.h"
+#include "watchdog.h"
 
+#include "pin.h"
 
-
-extern u8 PC_ReTime_flag;
+u16 Mbus_Time_OFF_cnt;
+u16 Mbus_Time_OFF_flag;
+extern u8 IRQ4_FLAG, F;
+u8 uart4flag;
 u16 PC_ReTime_cnt;
-u8 PC_ReTime_stop_flag=1;
-
+u8 PC_ReTime_stop_flag = 1;
+u16 err;
 u8 LED_1s_flag = 1;
 u16 LED_time_1s_cnt = 0;
+u16 err_time_1s_cnt = 0;
 u32 Time_cnt = 0;
+u16 err_LED = 0000;
 u8 LED_index = 1;
+volatile uint32_t TimingDelay = 0; // å…¨å±€è®¡æ—¶å˜é‡ï¼Œvolatile é˜²æ­¢ä¼˜åŒ–
+
+// å…¨å±€æ ‡å¿—ï¼Œç”¨äºæ ‡è®°ä¸­æ–­æ˜¯å¦å·²ä½¿èƒ½
+volatile u8 irq_enabled = 0;
+
+/*é‡è¦ä¿¡æ¯ï¼š3ä¸ªåˆ†åˆ«å¯¹åº”IDï¼š9*/
+
+
+void GPIO_init(void)
+{
+	GPIO_InitTypeDef GPIO_InitStruct = {0};
+	
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);
+	
+	GPIO_InitStruct.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_5;
+	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN;
+	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	
+	GPIO_Init(GPIOD, &GPIO_InitStruct);
+}
 
 int main(void)
-{ 
-	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);		//ÉèÖÃÏµÍ³ÖĞ¶ÏÓÅÏÈ¼¶·Ö×é2
-	delay_init(168);      														//³õÊ¼»¯ÑÓÊ±º¯Êı
-	
-	USART1_Init(115200);															//Ö÷´®¿Ú£¬²¨ÌØÂÊÎª115200
-	USART2_Init(115200);															//¿ØÖÆËùÓĞ¶æ»ú
-	USART3_Init(115200);															//¿ØÖÆËùÓĞµç»ú
-	UART4_Init(115200);																//¶ÁÈ¡6Â·AS5600±àÂëÆ÷µÄÖµ
-	UART5_Init(100000);																//Ò£¿Ø½ÓÊÕ³õÊ¼»¯£»²¨ÌØÂÊ100000  9 0 E 2  M.BUSĞ­Òé
-	USART6_Init(9600);																//»ñÈ¡µç³ØµÄ²ÎÊı
-	
-	LED_Init();					  														//³õÊ¼»¯LEDÏÔÊ¾
-  BELL_INIT();
-	DigitalTube_LED_Init();														 //³õÊ¼»¯ÊıÂë¹ÜÏÔÊ¾
-//{0xc0,0xf9,0xa4,0xb0,0x99,0x92,0x82,0xf8,0x80,0x90,0x88,0x83,0xc6,0xa1,0x86,0x8e};0-f
-	SMG_Output(0x2f);  
-	LED0=0;
-	LED1=1;
-	delay_ms(1000);
-	SysTick_Config(SystemCoreClock /1000);   					//ÅäÖÃÊ±»ù×¼Îª1ms
-  Read_AS5600_State();															//ÅäÖÃºÍ¶ÁÈ¡as5600ÖĞÖµºÍ×´Ì¬
-
-	//memcpy(&x22,&yy1,4);
-	while(1) 
-	{
-		Get_Remote_channel_Date();											//»ñÈ¡µ±Ç°Ò£¿ØÆ÷µÄÖµ;
-		Get_MagneticEncoder_Date();                     //»ñÈ¡AS5600Î»ÖÃµÄÖµ
-		ALL_speed_OUT();																//µç»úËÙ¶ÈºÍ¶æ»ú½Ç¶ÈÖµ¼ÆËã
-		Get_Batter_Date();														  //»ñÈ¡µç³ØÊı¾İ
-		Get_MotorSpeed_Re_Date();
-		/*Ã¿500ºÁÃëÖ´ĞĞ*/
-		if(time_500ms_flag==1)													//Ã¿500ºÁÃëÖ´ĞĞÒ»´Î
-		{ 
-				Sent_Batter_code();													//¶¨Ê±·¢ËÍ»ñÈ¡µç³Ø²ÎÊıµÄÖ¸Áî
-			  time_500ms_flag=0;
-		}
-		/*Ã¿100ºÁÃëÖ´ĞĞ*/
-		if(time_100ms_flag==1)													//Ã¿100ºÁÃëÖ´ĞĞÒ»´Î
-		{
-			  Sent_MotorSpeed_code();	      							//·¢ËÍ8¸öµç»úÖµ
-			  Sent_SteeringMotor_Pozition();							//·¢ËÍ8¸ö¶æ»úÖµ
-				Sent_Date_PC();
-			  time_100ms_flag=0;  
-				LED0=!LED0;																	//ÌáÊ¾ÏµÍ³ÕıÔÚÔËĞĞ	
-				LED1=!LED1;																	//ÌáÊ¾ÏµÍ³ÕıÔÚÔËĞĞ;
-		}
-		/*Ã¿5ºÁÃëÖ´ĞĞ*/
-		if(time_5ms_flag==1)
-		{								
-			if(Seg_Display_Flag==1)Seg_Display_Flag=0;else Seg_Display_Flag=1;	//ÊıÂë¹ÜÎ»ÇĞ»»	
-			Sent_MagneticEncoder_Date(MagneticEncoder_ID_Number);								//»ñÈ¡Ã¿Ò»Â·µÄ±àÂëÆ÷Êı¾İ
-			time_5ms_flag=0;
-		}
-	}	
-}
-/*Ê±»ùÖĞ¶Ï*/
-void SysTick_Handler(void)
-{
-	time_5ms_cnt++;
-	time_100ms_cnt++;
-  time_500ms_cnt++;
-	LED_time_1s_cnt++;
-	
-	if(LED_time_1s_cnt >= 200)
-	{
-		LED_1s_flag = 1;
-		LED_time_1s_cnt = 0;
-	}
-	
-  if(time_5ms_cnt>=5)//5ms
-  {
-		time_5ms_flag=1;
-    time_5ms_cnt=0;
-//		Seg_Display(33);//ÊıÂë¹ÜÏÔÊ¾	
-		LED_Display(Time_cnt, LED_index);
-		LED_index++;
-		if(LED_index > 4)
-		{
-			LED_index = 1;
-		}
+{          
+		// 1. é¦–å…ˆé…ç½®ä¸­æ–­ä¼˜å…ˆçº§åˆ†ç»„
+   	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);//è®¾ç½®ç³»ç»Ÿä¸­æ–­ä¼˜å…ˆçº§åˆ†ç»„ä¸º2
 		
-		if(MagneticEncoder_ID_Number>=7)MagneticEncoder_ID_Number=1;else MagneticEncoder_ID_Number++;//AS5600´Å±àÂëÆ÷ID¼Ä´æÆ÷
-  }
-	if(time_100ms_cnt>=100)//100ms
-  {
-    time_100ms_cnt=0;
-		time_100ms_flag=1;
-  }
+		// 2. åˆå§‹åŒ–åŸºç¡€å¤–è®¾ï¼ˆä¸ä½¿èƒ½ä¸­æ–­ï¼‰
+		bsp_init_no_irq();
+		
+		// 3.  
+		motor_init();
 	
-  if(time_500ms_cnt>=500)//500ms
-  {
-    time_500ms_cnt=0;
-		time_500ms_flag=1;
-  }
-	
-	if(PC_ReTime_flag==1)//PCÊÕµ½Êı¾İ¿ªÊ¼¼ÆÊı,³¬Ê±ÔòÍ£Ö¹
-	{
-			PC_ReTime_cnt++;
-			if(PC_ReTime_cnt>500)
-			{
-					PC_ReTime_cnt=0;
-					PC_ReTime_stop_flag=1;
-				  PC_ReTime_flag=0;
-			}
-	
-	}
-	if(AS5600_Time_Flag==1)
-	{
-			AS5600_500ms_cnt++;
-			if(AS5600_500ms_cnt>1000)
-			{
-					AS5600_500ms_cnt=0;
-				  AS5600_Time_Flag=0;
-				  step=1;//AS5600µ÷ÖĞÖ¸Áî³¬Ê±£¬½øÈë¶ÁÈ¡µ÷ÖĞ²ÎÊıµÄ×´Ì¬
-			}
-	}
-	if(Mbus_Time_Count_Flag==1)
-	{
-			Mbus_Time_500ms_cnt++;
-		  if(Mbus_Time_500ms_cnt>500)
-			{
-					Mbus_Time_500ms_cnt=0;
-				  Mbus_Time_Count_Flag=0;
-			}
-	}
-	
-	if(LED_1s_flag == 1)
-	{
-		Time_cnt++;
-		LED_1s_flag = 0;
-	}
+		GPIO_init();
+		//ins_init();
+		
+		Watchdog_Init();
+		// 4. é…ç½®å¤–è®¾ä¸­æ–­ï¼ˆåœ¨å¯åŠ¨å†…æ ¸å‰é…ç½®å¥½ï¼‰
+		bsp_enable_irq(); 
+		
+		// 5. åˆ›å»ºä»»åŠ¡
+		init_task();
+		delay_ms(10);
+		
+		// åˆå§‹åŒ–PD4å’ŒPD5ä¸ºè¾“å…¥
+//		RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);
+//		pin_init(GPIOD, GPIO_Pin_4, GPIO_Mode_IN, GPIO_OType_PP, GPIO_PuPd_NOPULL);
+//		pin_init(GPIOD, GPIO_Pin_5, GPIO_Mode_IN, GPIO_OType_PP, GPIO_PuPd_NOPULL);
 
+
+		// å¯åœ¨æ­¤å¤„ä½¿ç”¨pd4_levelå’Œpd5_levelå˜é‡
+		
+		// 6. å¯åŠ¨è°ƒåº¦å™¨ï¼ˆä¼šè‡ªåŠ¨å¼€å¯å…¨å±€ä¸­æ–­ï¼‰            
+		osKernelStart();
+		
+    while(1)
+    {
+    }
 }

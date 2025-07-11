@@ -262,7 +262,7 @@ __attribute__((section(".revsh_text"))) __STATIC_INLINE __ASM int32_t __REVSH(in
     This function saturates a signed value.
 
     \param [in]  value  Value to be saturated
-    \param [in]    sat  Bit position to saturate to (1..32)
+    \param [in]    sat  Bit Position to saturate to (1..32)
     \return             Saturated value
  */
 #define __SSAT                            __ssat
@@ -273,7 +273,7 @@ __attribute__((section(".revsh_text"))) __STATIC_INLINE __ASM int32_t __REVSH(in
     This function saturates an unsigned value.
 
     \param [in]  value  Value to be saturated
-    \param [in]    sat  Bit position to saturate to (0..31)
+    \param [in]    sat  Bit Position to saturate to (0..31)
     \return             Saturated value
  */
 #define __USAT                            __usat
@@ -625,7 +625,7 @@ __attribute__( ( always_inline ) ) __STATIC_INLINE void __CLREX(void)
     This function saturates a signed value.
 
     \param [in]  value  Value to be saturated
-    \param [in]    sat  Bit position to saturate to (1..32)
+    \param [in]    sat  Bit Position to saturate to (1..32)
     \return             Saturated value
  */
 #define __SSAT(ARG1,ARG2) \
@@ -641,7 +641,7 @@ __attribute__( ( always_inline ) ) __STATIC_INLINE void __CLREX(void)
     This function saturates an unsigned value.
 
     \param [in]  value  Value to be saturated
-    \param [in]    sat  Bit position to saturate to (0..31)
+    \param [in]    sat  Bit Position to saturate to (0..31)
     \return             Saturated value
  */
 #define __USAT(ARG1,ARG2) \

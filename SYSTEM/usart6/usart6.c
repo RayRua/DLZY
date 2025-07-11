@@ -1,154 +1,193 @@
+//gimbal J13 usart6
+
 #include "sys.h"
-#include "usart6.h"	
-#include "usart.h"	
-#include "string.h"
+#include "usart6.h"
+
 #include "delay.h"
-/*uart6*/
-u8  Batter_Re_Date[34];//电池接受缓存区
-u8  Batter_Re_Count;	  //电池数据接受计数
-u8  Batter_Re_FLAG;		//电池接受完成标志位
+#include "Modbus_RTU_protocol.h"
+#include "motor_config.h"
 
-u8  Batter_Se_Date[7]={0XDD,0XA5,0X03,0X00,0XFF,0XFD,0X77};//主机发送该指令，等待电池返回参数
-
-u8  Batter_Voltage[2];			//电池电压
-u16 Batter_Voltage_Number;	//电池电压
-u8  Batter_Current[2];			//电池实时电流
-u16 Batter_Current_Number;	//电池实时电流
-u8  Batter_Capacity_Number;				//电池电量百分比
-u8  Batter_State[2];				//电池保护状态
-/**********************************************
-串口配置函数
-配置了串口6，PC6、7
-波特率：9600,
-数据位：8b，
-停止位：1，
-校验：N
-接收中断使能*/
-
-//**********************************************/
-
-void USART6_Init(u32 bound)
+_Bool ProcessReceivedData(uint8_t* rx_buff,uint16_t cnt);
+uint8_t usart6_rx_buf[RX_BUF_SIZE];
+volatile uint16_t usart6_rx_cnt = 0;
+void USART6_SendOneByte(u8 dat)
 {
-  GPIO_InitTypeDef gpio_initstructure;
-  USART_InitTypeDef usart_initstructure;
-  //UART_ClockInitTypeDef usart_clockinitstructure;	
+    while((USART6->SR & 0X40) == 0) {};  //循环发送,直到发送完毕
+    USART6->DR = (u8) dat;
+    while(USART_GetFlagStatus(USART6, USART_FLAG_TC) == RESET);
+}
+// RS485_Send函数添加重试机制
+void RS485_Send(uint8_t* data, uint32_t len) {
+    //GPIO_SetBits(RS485_DIR_GPIO, RS485_DIR_PIN);
+    //delay_ms(1);  // 确保方向稳定
 
-	NVIC_InitTypeDef NVIC_InitStructure;
-	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC,ENABLE); //使能GPIOC时钟
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART6,ENABLE); //使能USART6时钟
- 
-
-	USART_DeInit(USART6);  //复位串口6
-  
-  GPIO_PinAFConfig(GPIOC,GPIO_PinSource6,GPIO_AF_USART6);
-  GPIO_PinAFConfig(GPIOC,GPIO_PinSource7,GPIO_AF_USART6);	
-  /* C12 USART5_Tx */   
-  gpio_initstructure.GPIO_Pin = GPIO_Pin_6;
-  gpio_initstructure.GPIO_Mode = GPIO_Mode_AF;
-  gpio_initstructure.GPIO_OType = GPIO_OType_PP;
-  gpio_initstructure.GPIO_Speed = GPIO_Speed_50MHz;
-  gpio_initstructure.GPIO_PuPd = GPIO_PuPd_UP;
-  GPIO_Init(GPIOC, &gpio_initstructure);
-  
-  /* D2 USART5_Rx  */
-  gpio_initstructure.GPIO_Pin = GPIO_Pin_7;
-  gpio_initstructure.GPIO_Mode = GPIO_Mode_AF;
-  //gpio_initstructure.GPIO_OType = GPIO_OType_PP;
-  gpio_initstructure.GPIO_Speed = GPIO_Speed_50MHz;
-  gpio_initstructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-  GPIO_Init(GPIOC, &gpio_initstructure);
-
-  usart_initstructure.USART_BaudRate = bound;									  //波特率是
-  usart_initstructure.USART_WordLength = USART_WordLength_8b;   //8位数据位
-  usart_initstructure.USART_StopBits = USART_StopBits_1;				//1个停止位
-  usart_initstructure.USART_Parity =USART_Parity_No;					  //无校验
-  usart_initstructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None; //无硬件控制
-  usart_initstructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
-  USART_Init(USART6, &usart_initstructure);
-  USART_Cmd(USART6, ENABLE);
-  USART_ITConfig(USART6, USART_IT_RXNE, ENABLE);	
-	
-	
-	//USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);//开启相关中断
-
-	//Usart1 NVIC 配置
-  NVIC_InitStructure.NVIC_IRQChannel = USART6_IRQn;//串口6中断通道
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority=3;//抢占优先级3
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority =2;		//子优先级3
-	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;			//IRQ通道使能
-	NVIC_Init(&NVIC_InitStructure);	//根据指定的参数初始化VIC寄存器、
+    for(uint16_t i = 0; i < len; i++) {
+        USART6_SendOneByte( * data++);
+    }
+}
+void USART6_IRQHandler(void) {
+    if(USART_GetITStatus(USART6, USART_IT_RXNE) != RESET) {
+        if(usart6_rx_cnt < RX_BUF_SIZE) {
+            usart6_rx_buf[usart6_rx_cnt++] = USART_ReceiveData(USART6);
+						if(usart6_rx_cnt >= 64) usart6_rx_cnt = 0;  // 防止溢出
+						USART_ClearITPendingBit(USART6, USART_IT_RXNE);
+        }
+				
+    }
+		
+		 if(USART_GetITStatus(USART6, USART_IT_IDLE) != RESET)
+    {
+       while(1){
+					if(usart6_rx_cnt > 6) {
+            if(ProcessReceivedData(usart6_rx_buf, usart6_rx_cnt)){usart6_rx_cnt = 0; break;}
+						else{usart6_rx_cnt--;}
+        }
+				else break;
+			}
+					int clear=USART6->SR;
+					clear=USART6->DR;	
+	 }
 }
 
+_Bool ProcessReceivedData(uint8_t* rx_buff,uint16_t cnt){
+		uint16_t  usTemp, i;            
+		if(rx_buff[1] != 0x03)
+		{
+				cnt--;
+				memcpy(rx_buff, &rx_buff[1], cnt);
+				return 0;
+		}
+
+		if(CRC16_Check_Sum(rx_buff, rx_buff[2] + 5))
+	 {
+				cnt--;
+				memcpy(rx_buff, &rx_buff[1], cnt);
+				return 0;
+		}
+		usTemp = 1+1+1+rx_buff[2];//usTemp num of reg
+		if(rx_buff[0]==GIMBAL_YAW)
+		for(i = 0; i < usTemp; i++)
+		{
+				response_yaw[i] = rx_buff[i] ;
+		}
+		else if(rx_buff[0]==GIMBAL_PITCH)
+			for(i = 0; i < usTemp; i++)
+		{
+				response_pitch[i] = rx_buff[i];
+		}
+		Modbus_Response_Register();
+		return 1;
+}
+
+
+
+////////////  servo test
 void Usart6_SendOneByte(u8 dat)
 {
-    while((USART6->SR&0X40)==0) {}; //循环发送,直到发送完毕
+    while((USART6->SR & 0X40) == 0) {}; //????,??????
     USART6->DR = (u8) dat;
-    while(USART_GetFlagStatus(USART6,USART_FLAG_TC) == RESET);
+    while(USART_GetFlagStatus(USART6, USART_FLAG_TC) == RESET);
 }
 
-
-void USART6_IRQHandler(void)                	//串口6中断服务程序
+void Uart6SendStr(u8* pucStr, u8 ulNum)
 {
-	if(USART_GetITStatus(USART6, USART_IT_RXNE) != RESET)  			// 空闲中断
+    u8 i;
+    for(i = 0; i < ulNum; i++)
     {
-				 Batter_Re_Date[Batter_Re_Count]=USART_ReceiveData(USART6);
-				 Batter_Re_Count++;
-				 if(Batter_Re_Date[0]==0xDD)
-				{
-						if(Batter_Re_Count>33)
-						{
-									Batter_Re_Count=0;
-									Batter_Re_FLAG=1;  //电池数据一帧接受完成
-						}
-				}
-				else
-				{
-						Batter_Re_Count=0;
-				}
-		    USART_ClearITPendingBit(USART6, USART_IT_RXNE);
-	}
-	if(USART_GetITStatus(USART6,USART_IT_TXE)==SET)
-  {
-    USART_ClearITPendingBit(USART6,USART_IT_TXE);
-  }
+        Usart6_SendOneByte( * pucStr++);
+    }
 }
-
-void Sent_Batter_code(void)
+u8 USART_Set_NPosition[43] = {0xff, 0xff, 0xfe, 0x22, 0x83, 0x2a, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+u8 Clear_Duiji[8] = {0xff, 0xff, 0xfe, 0x04, 0x03, 0x28, 0x00};
+void Clear_DuoJi(u8 ID_Data, u16 cmd);
+void Set_N_DuoJi_Position(u16 Position_Data1, u16 Position_Time1, u16 Position_Data2, u16 Position_Time2, u16 Position_Data3, u16 Position_Time3, u16 Position_Data4, u16 Position_Time4, u16 Position_Data5, u16 Position_Time5, u16 Position_Data6, u16 Position_Time6, u16 Position_Data7, u16 Position_Time7)
 {
-	u8 i;
-	for(i=0;i<7;i++)
-	{
-			Usart6_SendOneByte(Batter_Se_Date[i]);
-	}
+    Clear_DuoJi(0xfe, 0x01);
+    u8 Check_Count;
+    u8 Check_Sum_Set1;
+    u32 Check_Sum_Temp1;
+
+    USART_Set_NPosition[0] = 0xff; //head0
+    USART_Set_NPosition[1] = 0xff; //head1
+    USART_Set_NPosition[2] = 0xfe; //ID
+    USART_Set_NPosition[3] = 0x27; //????6???
+    USART_Set_NPosition[4] = 0x83; //??
+    USART_Set_NPosition[5] = 0x2A; //???????
+    USART_Set_NPosition[6] = 0x04; //???????
+
+    USART_Set_NPosition[7] = 0x01; //????????ID
+    USART_Set_NPosition[8] = Position_Data1 >> 8; //??????
+    USART_Set_NPosition[9] = Position_Data1 & 0x00ff; //??????
+    USART_Set_NPosition[10] = Position_Time1 >> 8; //??????
+    USART_Set_NPosition[11] = Position_Time1 & 0x00ff; //??????
+
+    USART_Set_NPosition[12] = 0x02;
+    USART_Set_NPosition[13] = Position_Data2 >> 8;
+    USART_Set_NPosition[14] = Position_Data2 & 0x00ff;
+    USART_Set_NPosition[15] = Position_Time2 >> 8;
+    USART_Set_NPosition[16] = Position_Time2 & 0x00ff;
+
+    USART_Set_NPosition[17] = 0x03;
+    USART_Set_NPosition[18] = Position_Data3 >> 8;
+    USART_Set_NPosition[19] = Position_Data3 & 0x00ff;
+    USART_Set_NPosition[20] = Position_Time3 >> 8;
+    USART_Set_NPosition[21] = Position_Time3 & 0x00ff;
+
+    USART_Set_NPosition[22] = 0x04;
+    USART_Set_NPosition[23] = Position_Data4 >> 8;
+    USART_Set_NPosition[24] = Position_Data4 & 0x00ff;
+    USART_Set_NPosition[25] = Position_Time4 >> 8;
+    USART_Set_NPosition[26] = Position_Time4 & 0x00ff;
+
+    USART_Set_NPosition[27] = 0x05;
+    USART_Set_NPosition[28] = Position_Data5 >> 8;
+    USART_Set_NPosition[29] = Position_Data5 & 0x00ff;
+    USART_Set_NPosition[30] = Position_Time5 >> 8;
+    USART_Set_NPosition[31] = Position_Time5 & 0x00ff;
+
+    USART_Set_NPosition[32] = 0x06;
+    USART_Set_NPosition[33] = Position_Data6 >> 8;
+    USART_Set_NPosition[34] = Position_Data6 & 0x00ff;
+    USART_Set_NPosition[35] = Position_Time6 >> 8;
+    USART_Set_NPosition[36] = Position_Time6 & 0x00ff;
+
+    USART_Set_NPosition[37] = 0x07;
+    USART_Set_NPosition[38] = Position_Data7 >> 8;
+    USART_Set_NPosition[39] = Position_Data7 & 0x00ff;
+    USART_Set_NPosition[40] = Position_Time7 >> 8;
+    USART_Set_NPosition[41] = Position_Time7 & 0x00ff;
+
+    Check_Sum_Temp1 = 0;
+    for(Check_Count = 2; Check_Count <= 41; Check_Count++)
+    {
+        Check_Sum_Temp1 += USART_Set_NPosition[Check_Count];
+    }
+
+    Check_Sum_Temp1 = ~Check_Sum_Temp1;
+    Check_Sum_Set1 = (u8)Check_Sum_Temp1;
+    USART_Set_NPosition[42] = Check_Sum_Set1;
+
+    Uart6SendStr(USART_Set_NPosition, 43);
 }
 
-
-///*获取电池实时数据*/
-void Get_Batter_Date(void)
+void Clear_DuoJi(u8 ID_Data, u16 cmd)
 {
+    u8 Check_Sum_ID;
 
-		 if(Batter_Re_FLAG==1)
-		 {
-			  if((Batter_Re_Date[0]==0xdd)&&(Batter_Re_Date[2]==0x00)&&(Batter_Re_Date[33]==0x77))
-				{
-					 /*获取电池实时电压*/
-							Batter_Voltage[1]=Batter_Re_Date[4];
-							Batter_Voltage[0]=Batter_Re_Date[5];
-							Batter_Voltage_Number=Batter_Voltage[1]*256+Batter_Voltage[0];
-					 /*获取电池实时电流*/
-							Batter_Current[1]=Batter_Re_Date[6];
-							Batter_Current[0]=Batter_Re_Date[7];
-							Batter_Current_Number=Batter_Current[1]*256+Batter_Current[0];
-					 /*获取电池剩余容量*/
-							Batter_Capacity_Number=Batter_Re_Date[23];
-					 /*获取电池各种保护状态*/
-					    Batter_State[1]=Batter_Re_Date[20];
-						  Batter_State[0]=Batter_Re_Date[21];
-							Batter_Re_Date[0]=0x00;
-							Batter_Re_FLAG=0;
-				}
-			}
+    Clear_Duiji[0] = 0xff;
+    Clear_Duiji[1] = 0xff;
+    Clear_Duiji[2] = ID_Data;
+    Clear_Duiji[3] = 0x04;
+    Clear_Duiji[4] = 0x03;
+    Clear_Duiji[5] = 0x28;
+    Clear_Duiji[6] = cmd;
+
+    Check_Sum_ID = ~(Clear_Duiji[2] + Clear_Duiji[3] + Clear_Duiji[4] + Clear_Duiji[5] + Clear_Duiji[6]);
+    Clear_Duiji[7] = Check_Sum_ID;
+
+    Uart6SendStr(Clear_Duiji, 8);
 }
+
 
 
 

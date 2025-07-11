@@ -1,30 +1,45 @@
-*.rar
-*.o
+# 编译输出目录
+OBJ/
+Objects/
+
+# Keil/MDK 工程相关
+*.uvoptx
+*.uvguix.*
+*.axf
+*.hex
+*.bin
 *.d
+*.o
 *.crf
-*.htm
 *.dep
 *.map
-*.bak
 *.lnp
 *.lst
-*.ini
-*.iex
 *.sct
 *.scvd
-*.uvguix
 *.dbg*
-*.uvguix.*
-.mxproject
- 
+*.iex
+*.bak
+*.htm
+*.log
+
+# 临时文件
+*.tmp
+*.swp
+*.swo
+*.user
+
+# IDE 配置
+.vscode/
 RTE/
 Templates/
 Examples/
- 
+
+# 例外：保留源码和工程文件
 !*.uvprojx
 !*.h
 !*.c
 !*.ioc
-!*.axf
-!*.bin
-!*.hex
+
+# 其他
+*.mxproject

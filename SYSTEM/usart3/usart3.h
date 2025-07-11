@@ -9,6 +9,15 @@ void USART3_Init(u32 bound);
 void USART3_SendOneByte(u8 dat);
 void USART3_SendStr(u8 *pucStr, u8 ulNum);
 void Sent_MotorSpeed_code(void);
-void Get_MotorSpeed_Re_Date(void);
+void WheelReturnedDataHandle(void);
+
+typedef struct
+{
+    int16_t ReturnedWheelSpeedValue;
+    uint8_t ReturnedWheelErrorCode;
+    uint16_t ReturnedWheelHallCnt;
+} ReturnedWheel;
+
+
 #endif
 

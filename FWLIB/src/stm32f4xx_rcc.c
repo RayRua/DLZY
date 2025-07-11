@@ -2203,7 +2203,7 @@ FlagStatus RCC_GetFlagStatus(uint8_t RCC_FLAG)
     statusreg = RCC->CSR;
   }
 
-  /* Get the flag position */
+  /* Get the flag Position */
   tmp = RCC_FLAG & FLAG_MASK;
   if ((statusreg & ((uint32_t)1 << tmp)) != (uint32_t)RESET)
   {

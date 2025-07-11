@@ -10,6 +10,7 @@ void All_speed_Control(void);//控制车的速度
 void SpeedsumCheck(unsigned char *p);
 void ALL_speed_OUT(void);
 void MBUS_TO_MotorSpeed(void);
+void setMagneticEncoder_Code(void);
 #endif
 
 

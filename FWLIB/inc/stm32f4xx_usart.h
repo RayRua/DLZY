@@ -68,7 +68,7 @@ typedef struct
   uint16_t USART_Parity;              /*!< Specifies the parity mode.
                                            This parameter can be a value of @ref USART_Parity
                                            @note When parity is enabled, the computed parity is inserted
-                                                 at the MSB position of the transmitted data (9th bit when
+                                                 at the MSB Position of the transmitted data (9th bit when
                                                  the word length is set to 9 data bits; 8th bit when the
                                                  word length is set to 8 data bits). */
  

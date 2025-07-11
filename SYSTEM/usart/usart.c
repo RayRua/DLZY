@@ -1,330 +1,142 @@
+//master DB1 usart1
+
 #include "sys.h"
-#include "usart.h"	
-#include "uart4.h"	
-#include "uart5.h"	
+#include "usart.h"
+#include "can.h"
+#include "usart3.h"
+#include "uart4.h"
+#include "uart5.h"
 #include "string.h"
+#include "communicate.h"
 
+unsigned char rx1buf[UART1_RXSIZE];
+unsigned char rx1head;
+unsigned char rx1tail;
+unsigned char tx1buf[UART1_TXSIZE];
+unsigned char tx1head;
+unsigned char tx1tail;
 
-extern u16 x_speed;
-extern u16 y_speed;
-extern u16 z_speed;
-extern u8 PC_ReTime_flag;
-extern u16 PC_ReTime_cnt;
-extern u8 PC_ReTime_stop_flag;
-extern u8 MBUS_ON_OFF;
-extern u8  Batter_Voltage[2];			//µç³ØµçÑ¹
-extern u8  Batter_Current[2];			//µç³ØÊµÊ±µçÁ÷
-extern u8  Batter_Capacity_Number;				//µç³ØµçÁ¿°Ù·Ö±È
-extern u8  Batter_State[2];				//µç³Ø±£»¤×´Ì¬
+COMMUNICATE uart1;
 
-//ÂÖ×ÓËÙ¶È
-extern int16_t Real_MotorSpeed1;
-extern int16_t Real_MotorSpeed2;
-extern int16_t Real_MotorSpeed3;
-extern int16_t Real_MotorSpeed4;
-extern int16_t Real_MotorSpeed5;
-extern int16_t Real_MotorSpeed6;
-
-//ÂÖ×Ó×´Ì¬
-extern uint16_t Motor_State1;
-extern uint16_t Motor_State2;
-extern uint16_t Motor_State3;
-extern uint16_t Motor_State4;
-extern uint16_t Motor_State5;
-extern uint16_t Motor_State6;
-
-u8 PC_Sent_Date[62]={0};
-extern u16 Position1,Position2,Position3,Position4,Position5,Position6,Position7,Position8;
-
-////////////////////////////////////////////////////////////////////////////////// 	 
-//Èç¹ûÊ¹ÓÃucos,Ôò°üÀ¨ÏÂÃæµÄÍ·ÎÄ¼ş¼´¿É.
+//////////////////////////////////////////////////////////////////////////////////
+//å¦‚æœä½¿ç”¨ucos,éœ€è¦æ·»åŠ ucosçš„å¤´æ–‡ä»¶.
 #if SYSTEM_SUPPORT_OS
-#include "includes.h"					//ucos Ê¹ÓÃ	  
+#include "includes.h"                   //ucos ä½¿ç”¨
 #endif
- 
+
 
 
 //////////////////////////////////////////////////////////////////
-//¼ÓÈëÒÔÏÂ´úÂë,Ö§³Öprintfº¯Êı,¶ø²»ĞèÒªÑ¡Ôñuse MicroLIB	  
+//å¦‚æœä½¿ç”¨printf,éœ€è¦é€‰å®šuse MicroLIB
 #if 1
-#pragma import(__use_no_semihosting)             
-//±ê×¼¿âĞèÒªµÄÖ§³Öº¯Êı                 
-struct __FILE 
-{ 
-	int handle; 
-}; 
+#pragma import(__use_no_semihosting)
+//é»˜è®¤éœ€è¦å®ç°_sys_exit()å‡½æ•°
+struct __FILE
+{
+    int handle;
+};
 
-FILE __stdout;       
-//¶¨Òå_sys_exit()ÒÔ±ÜÃâÊ¹ÓÃ°ëÖ÷»úÄ£Ê½    
-void _sys_exit(int x) 
-{ 
-	x = x; 
-} 
-//ÖØ¶¨Òåfputcº¯Êı 
-int fputc(int ch, FILE *f)
-{ 	
-	while((USART1->SR&0X40)==0);//Ñ­»··¢ËÍ,Ö±µ½·¢ËÍÍê±Ï   
-	USART1->DR = (u8) ch;      
-	return ch;
+FILE __stdout;
+//é»˜è®¤_sys_exit()å‡½æ•°éœ€è¦è¿”å›å€¼
+void _sys_exit(int x)
+{
+    x = x;
 }
+
+//é‡å®šä¹‰fputcå‡½æ•°
+int fputc(int ch, FILE* f)
+{
+    while((USART1->SR & 0X40) == 0);  //å¾ªç¯ç­‰å¾…,ç›´åˆ°å‘é€å®Œæˆ
+
+    USART1->DR = (u8) ch;
+    return ch;
+}
+
 #endif
- 
-#if EN_USART1_RX   //Èç¹ûÊ¹ÄÜÁË½ÓÊÕ
-//´®¿Ú1ÖĞ¶Ï·şÎñ³ÌĞò
-//×¢Òâ,¶ÁÈ¡USARTx->SRÄÜ±ÜÃâÄªÃûÆäÃîµÄ´íÎó   	
-u8 USART_RX_BUF[USART_REC_LEN];     //½ÓÊÕ»º³å,×î´óUSART_REC_LEN¸ö×Ö½Ú.
-//½ÓÊÕ×´Ì¬
-//bit15£¬	½ÓÊÕÍê³É±êÖ¾
-//bit14£¬	½ÓÊÕµ½0x0d
-//bit13~0£¬	½ÓÊÕµ½µÄÓĞĞ§×Ö½ÚÊıÄ¿
-u16 USART_RX_STA=0;       //½ÓÊÕ×´Ì¬±ê¼Ç	
+
+#if EN_USART1_RX   //ä½¿ç”¨ä¸²å£1
+//ä¸²å£1æ¥æ”¶ä¸­æ–­å¤„ç†å‡½æ•°
+//æ³¨æ„,è¯»å–USARTx->SRå¯„å­˜å™¨ä¼šæ¸…é™¤ç›¸åº”çš„æ ‡å¿—ä½
+u8 USART_RX_BUF[USART_REC_LEN];     //æ¥æ”¶ç¼“å†²,å¤§å°ä¸ºUSART_REC_LENå­—èŠ‚.
+//æ¥æ”¶çŠ¶æ€
+//bit15   æ¥æ”¶å®Œæˆæ ‡å¿—
+//bit14   æ¥æ”¶åˆ°çš„å¸§é”™è¯¯
+//bit13~0 æ¥æ”¶åˆ°çš„æœ‰æ•ˆå­—èŠ‚æ•°ç›®
+u16 USART_RX_STA = 0;     //æ¥æ”¶çŠ¶æ€æ ‡å¿—
+
+//åˆå§‹åŒ–IO ä¸²å£1
+//bound:æ³¢ç‰¹ç‡
 
 
-uint8_t PC_Re_Date[19];//½ÓÊÜµ½Õâ¸öÖµ±íÊ¾ĞèÒª¸üĞÂ¹Ì¼şÁË
-uint8_t PC_Re_Count;	 //½ÓÊÜ¼ÆÊı
-uint8_t PC_Re_FLAG;		 //½ÓÊÜÍê³É±êÖ¾Î»
 
-float PC_x_speed;
-float PC_y_speed;
-float PC_z_speed;
-//³õÊ¼»¯IO ´®¿Ú1 
-//bound:²¨ÌØÂÊ
-void USART1_Init(u32 bound)
-	{
-   //GPIO¶Ë¿ÚÉèÖÃ
-  	GPIO_InitTypeDef GPIO_InitStructure;
-	USART_InitTypeDef USART_InitStructure;
-	NVIC_InitTypeDef NVIC_InitStructure;
-	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA,ENABLE); //Ê¹ÄÜGPIOAÊ±ÖÓ
-	
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1,ENABLE);//Ê¹ÄÜUSART1Ê±ÖÓ
-	
-	
-/*************************************UART1***************************************************/
-	//´®¿Ú1¶ÔÓ¦Òı½Å¸´ÓÃÓ³Éä
-	GPIO_PinAFConfig(GPIOA,GPIO_PinSource9,GPIO_AF_USART1); //GPIOA9¸´ÓÃÎªUSART1
-	GPIO_PinAFConfig(GPIOA,GPIO_PinSource10,GPIO_AF_USART1); //GPIOA10¸´ÓÃÎªUSART1
-	
-	//USART1¶Ë¿ÚÅäÖÃ
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9 | GPIO_Pin_10; //GPIOA9ÓëGPIOA10
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;//¸´ÓÃ¹¦ÄÜ
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;	//ËÙ¶È50MHz
-	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP; //ÍÆÍì¸´ÓÃÊä³ö
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP; //ÉÏÀ­
-	GPIO_Init(GPIOA,&GPIO_InitStructure); //³õÊ¼»¯PA9£¬PA10
 
-   //USART1 ³õÊ¼»¯ÉèÖÃ
-	USART_InitStructure.USART_BaudRate = bound;//²¨ÌØÂÊÉèÖÃ
-	USART_InitStructure.USART_WordLength = USART_WordLength_8b;//×Ö³¤Îª8Î»Êı¾İ¸ñÊ½
-	USART_InitStructure.USART_StopBits = USART_StopBits_1;//Ò»¸öÍ£Ö¹Î»
-	USART_InitStructure.USART_Parity = USART_Parity_No;//ÎŞÆæÅ¼Ğ£ÑéÎ»
-	USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;//ÎŞÓ²¼şÊı¾İÁ÷¿ØÖÆ
-	USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;	//ÊÕ·¢Ä£Ê½
-  USART_Init(USART1, &USART_InitStructure); //³õÊ¼»¯´®¿Ú1
-	
-  USART_Cmd(USART1, ENABLE);  //Ê¹ÄÜ´®¿Ú1 
-	//USART_ClearFlag(USART1, USART_FLAG_TC);
-	USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);//¿ªÆôÏà¹ØÖĞ¶Ï
-	//Usart1 NVIC ÅäÖÃ
-  NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;//´®¿Ú1ÖĞ¶ÏÍ¨µÀ
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority=3;//ÇÀÕ¼ÓÅÏÈ¼¶3
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority =1;		//×ÓÓÅÏÈ¼¶3
-	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;			//IRQÍ¨µÀÊ¹ÄÜ
-	NVIC_Init(&NVIC_InitStructure);	//¸ù¾İÖ¸¶¨µÄ²ÎÊı³õÊ¼»¯VIC¼Ä´æÆ÷¡¢
-
-	
-}
 void USART1_SendOneByte(u8 dat)
 {
-    while((USART1->SR&0X40)==0) {}; //Ñ­»··¢ËÍ,Ö±µ½·¢ËÍÍê±Ï
+
+    while((USART1->SR & 0X40) == 0) {};  //å¾ªç¯ç­‰å¾…,ç›´åˆ°å‘é€å®Œæˆ
+
     USART1->DR = (u8) dat;
-    while(USART_GetFlagStatus(USART1,USART_FLAG_TC) == RESET);
-}
-void Sent_Date_PC(void)
-{
-	u8 i;
-	PC_Sent_Date[0]=0XAA;
-	PC_Sent_Date[1]=0X55;
-	PC_Sent_Date[2]=0X3e;
-	
-	PC_Sent_Date[3]=Real_MotorSpeed1&0xff; //1ºÅÂÖÂëÅÌÊıµÍÎ»
-	PC_Sent_Date[4]=Real_MotorSpeed1>>8; //1ºÅÂÖÂëÅÌÊı¸ßÎ»
-	
-	PC_Sent_Date[5]=Real_MotorSpeed2&0xff; //2ºÅÂÖÂëÅÌÊıµÍÎ»
-	PC_Sent_Date[6]=Real_MotorSpeed2>>8; //2ºÅÂÖÂëÅÌÊı¸ßÎ»
-	
-	PC_Sent_Date[7]=Real_MotorSpeed3&0xff; //3ºÅÂÖÂëÅÌÊıµÍÎ»
-	PC_Sent_Date[8]=Real_MotorSpeed3>>8; //3ºÅÂÖÂëÅÌÊı¸ßÎ»
-	
-	PC_Sent_Date[9]=Real_MotorSpeed4&0xff; //4ºÅÂÖÂëÅÌÊı¸ßÎ»
-	PC_Sent_Date[10]=Real_MotorSpeed4>>8;//4ºÅÂÖÂëÅÌÊı¸ßÎ»
-	
-	PC_Sent_Date[11]=Real_MotorSpeed5&0xff;//5ºÅÂÖÂëÅÌÊı¸ßÎ»
-	PC_Sent_Date[12]=Real_MotorSpeed5>>8;//5ºÅÂÖÂëÅÌÊı¸ßÎ»
-	
-	PC_Sent_Date[13]=Real_MotorSpeed6&0xff;//6ºÅÂÖÂëÅÌÊı¸ßÎ»
-	PC_Sent_Date[14]=Real_MotorSpeed6>>8;//6ºÅÂÖÂëÅÌÊı¸ßÎ»
-	
-	PC_Sent_Date[15]=0X00;//--
-	PC_Sent_Date[16]=0X00;//--
-	
-	
-	PC_Sent_Date[17]=0X00;//--
-	PC_Sent_Date[18]=0X00;//--
-	
-	PC_Sent_Date[19]=0X00;
-	PC_Sent_Date[20]=0X00;
-	
-	PC_Sent_Date[21]=0X80;//¶ş½øÖÆ×î¸ß2Î»8ÂÖ:11 6ÂÖ£º10 4ÂÖ£º01   Ê£Óà6Î»Îª°æ±¾ºÅ
-	
-	PC_Sent_Date[22]=0;//Í¨µÀ5
-	PC_Sent_Date[23]=0;//Í¨µÀ6
-	
-	//0 	Õı³£			8 	ÎÂ¶È±£»¤
-	//2 	»ô¶û¹ÊÕÏ		9 	µçÁ÷Æ«ÖÃ¹ÊÕÏ
-	//3 	×ª°Ñ¹ÊÕÏ		10 	µçÑ¹Æ«ÖÃ¹ÊÕÏ
-	//5 	¹ıµçÁ÷±£»¤	    11 	Ä¸ÏßµçÁ÷Æ«ÖÃ¹ÊÕÏ
-	//6 	¹ıÑ¹±£»¤		12 	¶Â×ª±£»¤
-	//7 	Ç·Ñ¹±£»¤		13 	UART¹ÊÕÏ
-	PC_Sent_Date[24]=Motor_State1&0xff; 		//1ºÅÂÖ×´Ì¬			
-	PC_Sent_Date[25]=Motor_State2&0xff;			//2ºÅÂÖ×´Ì¬	
-	PC_Sent_Date[26]=Motor_State3&0xff;			//3ºÅÂÖ×´Ì¬	
-	PC_Sent_Date[27]=Motor_State4&0xff;			//4ºÅÂÖ×´Ì¬	
-	PC_Sent_Date[28]=Motor_State5&0xff;			//5ºÅÂÖ×´Ì¬	
-	PC_Sent_Date[29]=Motor_State6&0xff;			//6ºÅÂÖ×´Ì¬	
-	PC_Sent_Date[30]=0;			//6ÂÖÏµÍ³Ä¬ÈÏÎª0
-	PC_Sent_Date[31]=0;			//6ÂÖÏµÍ³Ä¬ÈÏÎª0
-	
-	
-	PC_Sent_Date[32]=Position1&0x00ff;	//1ºÅÂÖ¶æ»úµÍÎ»
-	PC_Sent_Date[33]=Position1>>8;		//1ºÅÂÖ¶æ»ú¸ßÎ»
-	
-	PC_Sent_Date[34]=Position2&0x00ff;	//2ºÅÂÖ¶æ»úµÍÎ»
-	PC_Sent_Date[35]=Position2>>8;		//2ºÅÂÖ¶æ»úµÍÎ»
-	
-	PC_Sent_Date[36]=Position3&0x00ff;	//3ºÅÂÖ¶æ»úµÍÎ»
-	PC_Sent_Date[37]=Position3>>8;		//3ºÅÂÖ¶æ»úµÍÎ»
-	
-	PC_Sent_Date[38]=Position4&0x00ff;	//4ºÅÂÖ¶æ»úµÍÎ»
-	PC_Sent_Date[39]=Position4>>8;		//4ºÅÂÖ¶æ»úµÍÎ»
-	
-	PC_Sent_Date[40]=Position5&0x00ff;	//5ºÅÂÖ¶æ»úµÍÎ»
-	PC_Sent_Date[41]=Position5>>8;		//5ºÅÂÖ¶æ»úµÍÎ»
-	
-	PC_Sent_Date[42]=Position6&0x00ff;	//6ºÅÂÖ¶æ»úµÍÎ»
-	PC_Sent_Date[43]=Position6>>8;		//6ºÅÂÖ¶æ»úµÍÎ»
-	
-	PC_Sent_Date[44]=0;					//6ÂÖÏµÍ³Ä¬ÈÏÎª0
-	PC_Sent_Date[45]=0;					//6ÂÖÏµÍ³Ä¬ÈÏÎª0
-	
-	PC_Sent_Date[46]=0;					//6ÂÖÏµÍ³Ä¬ÈÏÎª0
-	PC_Sent_Date[47]=0;					//6ÂÖÏµÍ³Ä¬ÈÏÎª0
-	
-	PC_Sent_Date[48]=0X00;				//ÔİÊ±Ã»ÓĞÕâ¶«Î÷
-	PC_Sent_Date[49]=0X00;				//ÔİÊ±Ã»ÓĞÕâ¶«Î÷
-	
-	PC_Sent_Date[50]=0X00;				//×ªÏò±Õ»·¼ì²â ÔİÎŞ
-	PC_Sent_Date[51]=0X00;				//×ªÏòÎÂ¶È¼ì²â ÔİÎŞ
-	
-	PC_Sent_Date[52]=0X00;				//·À×² ÔİÎŞ
-	
-	PC_Sent_Date[53]=MBUS_ON_OFF;		//Ò£¿ØÆ÷×´Ì¬
-	
-    PC_Sent_Date[54]=Batter_Voltage[1];	//µç³ØµçÑ¹
-	PC_Sent_Date[55]=Batter_Voltage[0];
-	
-	PC_Sent_Date[56]=Batter_Current[1];//µç³ØÊµÊ±µçÁ÷
-	
-	PC_Sent_Date[57]=Batter_Current[0];
-	
-	PC_Sent_Date[58]=Batter_Capacity_Number;//µç³ØÈİÁ¿°Ù·Ö±È
-	
-	PC_Sent_Date[59]=Batter_State[1];  //µç³Ø±£»¤×´Ì¬
-	PC_Sent_Date[60]=Batter_State[0];//µç³Ø±£»¤×´Ì¬
-		
-	PC_Sent_Date[61]=0XAA;   //Òì»òĞ£Ñé
-	
-	//Òì»òĞ£ÑéÇ°ÇåÁã
-	PC_Sent_Date[61] = 0x00;	
-	for(i = 0;i < 61; i++)					//Òì»òĞ£Ñé
-	{
-		PC_Sent_Date[61] ^= PC_Sent_Date[i]; 
-	}
-	
-	
-	for(i=0;i<62;i++)
-	{
-		USART1_SendOneByte(PC_Sent_Date[i]);
-	}
-}
-void Get_PC_Date(void)
-{
-		if((PC_Re_Date[0]==0xaa)&&(PC_Re_Date[1]==0x55)&&(PC_Re_Date[2]==0x0f))
-		{
-				PC_ReTime_flag=1;//PC·¢À´µÄÊı¾İ¿ªÊ¼¼ÆÊı£¬µ±³¬¹ı500ºÁÃëÃ»ÊÕµ½£¬Ôò½øĞĞÍ£Ö¹£¬Êı¾İÇåÁã
-			  PC_ReTime_cnt=0;
-				PC_ReTime_stop_flag=0;
-				memcpy(&PC_x_speed,PC_Re_Date+6,4);
-				memcpy(&PC_y_speed,PC_Re_Date+10,4);
-				memcpy(&PC_z_speed,PC_Re_Date+14,4);
-		}
 
-}
-void USART1_IRQHandler(void)                	//´®¿Ú1ÖĞ¶Ï·şÎñ³ÌĞò
-{
-	
-	if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)  			// ¿ÕÏĞÖĞ¶Ï
-  {
-  				PC_Re_Date[PC_Re_Count]=USART_ReceiveData(USART1);
-          PC_Re_Count++;
-          if(PC_Re_Date[0]==0xAA)
-	  			{
-							if(PC_Re_Count>18)
-							{
-									PC_Re_Count=0;
-									PC_Re_FLAG=1;
-							}
-					}
-					else
-					{
-							PC_Re_Count=0;
-					}
-					USART_ClearITPendingBit(USART1, USART_IT_RXNE);
-	}
-	if(USART_GetITStatus(USART1, USART_IT_IDLE) != RESET)  			// ¿ÕÏĞÖĞ¶Ï
-	{	
-				USART_ReceiveData(USART1);																// Çå³ı´®¿Ú¿ÕÏĞÖĞ¶Ï
-				USART_ClearITPendingBit(USART1, USART_IT_IDLE);
-	}
-		
-//	if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)  //½ÓÊÕÖĞ¶Ï(½ÓÊÕµ½µÄÊı¾İ±ØĞëÊÇ0x0d 0x0a½áÎ²)
-//	{
-//		Res =USART_ReceiveData(USART1);//(USART1->DR);	//¶ÁÈ¡½ÓÊÕµ½µÄÊı¾İ
-//		
-//		if((USART_RX_STA&0x8000)==0)//½ÓÊÕÎ´Íê³É
-//		{
-//			if(USART_RX_STA&0x4000)//½ÓÊÕµ½ÁË0x0d
-//			{
-//				if(Res!=0x0a)USART_RX_STA=0;//½ÓÊÕ´íÎó,ÖØĞÂ¿ªÊ¼
-//				else USART_RX_STA|=0x8000;	//½ÓÊÕÍê³ÉÁË 
-//			}
-//			else //»¹Ã»ÊÕµ½0X0D
-//			{	
-//				if(Res==0x0d)USART_RX_STA|=0x4000;
-//				else
-//				{
-//					USART_RX_BUF[USART_RX_STA&0X3FFF]=Res ;
-//					USART_RX_STA++;
-//					if(USART_RX_STA>(USART_REC_LEN-1))USART_RX_STA=0;//½ÓÊÕÊı¾İ´íÎó,ÖØĞÂ¿ªÊ¼½ÓÊÕ	  
-//				}		 
-//			}
-//		}   		 
-//  } 
+    while(USART_GetFlagStatus(USART1, USART_FLAG_TC) == RESET);
 }
 
-#endif	
+void USART1_Send(uint8_t* pdata, uint8_t Len)
+{
+    u8 i;
 
- 
+    for(i = 0; i < Len; i++)
+    {
+        USART1_SendOneByte(pdata[i]);
+    }
+}
+
+u8 usart1GetByte(u8* pChar)
+{
+    unsigned char tmptail;
+
+    if(rx1head != rx1tail)
+    {
+        USART_ITConfig(USART1, USART_IT_RXNE, DISABLE); //ç¦æ­¢æ¥æ”¶ è¯»å–æ•°æ®
+        tmptail = (rx1tail + 1) ;
+        tmptail %= UART1_RXSIZE ;       /* calculate buffer index */
+        rx1tail = tmptail;      /* store new index */
+        * pChar = rx1buf[tmptail];
+        USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
+                          /* return data */
+        return 1;
+    }
+
+    return 0;
+}
+
+u8 x1;
+void USART1_IRQHandler(void)                    //ä¸²å£1æ¥æ”¶ä¸­æ–­å¤„ç†å‡½æ•°
+{
+
+    if(USART_GetITStatus(USART1, USART_IT_RXNE) == SET)
+    {
+        u8 tmphead;
+        u8 data;
+        data = USART_ReceiveData(USART1);               /* read the received data */
+        tmphead = (rx1head + 1) ;                       /* calculate buffer index */
+        tmphead %= UART1_RXSIZE;
+        rx1head = tmphead;                      /* store new index */
+
+        USART_ClearITPendingBit(USART1, USART_IT_RXNE);
+
+        rx1buf[tmphead] = data;
+    }
+
+    if(USART_GetITStatus(USART1, USART_IT_IDLE) != RESET)           // æ¥æ”¶å®Œæˆ
+    {
+        USART_ReceiveData(USART1);                                                              // æ¸…é™¤æ¥æ”¶å®Œæˆæ ‡å¿—
+        USART_ClearITPendingBit(USART1, USART_IT_IDLE);
+    }
+
+}
+
+#endif
+
 
 
 

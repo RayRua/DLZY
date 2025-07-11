@@ -181,14 +181,14 @@ typedef struct
   * @}
   */
 
-/** @defgroup I2C_NACK_position 
+/** @defgroup I2C_NACK_Position 
   * @{
   */
 
 #define I2C_NACKPosition_Next           ((uint16_t)0x0800)
 #define I2C_NACKPosition_Current        ((uint16_t)0xF7FF)
-#define IS_I2C_NACK_POSITION(POSITION)  (((POSITION) == I2C_NACKPosition_Next) || \
-                                         ((POSITION) == I2C_NACKPosition_Current))
+#define IS_I2C_NACK_Position(Position)  (((Position) == I2C_NACKPosition_Next) || \
+                                         ((Position) == I2C_NACKPosition_Current))
 /**
   * @}
   */ 
@@ -205,14 +205,14 @@ typedef struct
   * @}
   */
 
-/** @defgroup I2C_PEC_position 
+/** @defgroup I2C_PEC_Position 
   * @{
   */
 
 #define I2C_PECPosition_Next            ((uint16_t)0x0800)
 #define I2C_PECPosition_Current         ((uint16_t)0xF7FF)
-#define IS_I2C_PEC_POSITION(POSITION) (((POSITION) == I2C_PECPosition_Next) || \
-                                       ((POSITION) == I2C_PECPosition_Current))
+#define IS_I2C_PEC_Position(Position) (((Position) == I2C_PECPosition_Next) || \
+                                       ((Position) == I2C_PECPosition_Current))
 /**
   * @}
   */ 

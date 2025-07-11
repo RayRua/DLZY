@@ -1248,7 +1248,7 @@ void USART_ITConfig(USART_TypeDef* USARTx, uint16_t USART_IT, FunctionalState Ne
   /* Get the USART register index */
   usartreg = (((uint8_t)USART_IT) >> 0x05);
 
-  /* Get the interrupt position */
+  /* Get the interrupt Position */
   itpos = USART_IT & IT_MASK;
   itmask = (((uint32_t)0x01) << itpos);
     
@@ -1391,7 +1391,7 @@ ITStatus USART_GetITStatus(USART_TypeDef* USARTx, uint16_t USART_IT)
     
   /* Get the USART register index */
   usartreg = (((uint8_t)USART_IT) >> 0x05);
-  /* Get the interrupt position */
+  /* Get the interrupt Position */
   itmask = USART_IT & IT_MASK;
   itmask = (uint32_t)0x01 << itmask;
   

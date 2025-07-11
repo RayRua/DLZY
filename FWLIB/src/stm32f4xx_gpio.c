@@ -214,7 +214,7 @@ void GPIO_Init(GPIO_TypeDef* GPIOx, GPIO_InitTypeDef* GPIO_InitStruct)
   for (pinpos = 0x00; pinpos < 0x10; pinpos++)
   {
     pos = ((uint32_t)0x01) << pinpos;
-    /* Get the port pins position */
+    /* Get the port pins Position */
     currentpin = (GPIO_InitStruct->GPIO_Pin) & pos;
 
     if (currentpin == pos)
