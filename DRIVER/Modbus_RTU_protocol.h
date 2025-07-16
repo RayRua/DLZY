@@ -9,17 +9,17 @@ extern uint8_t response_yaw[16];
 extern uint8_t response_pitch[16];
 
 /********************************define***********************************/
-uint8_t* Modbus_Request_Read_Register(uint8_t addr,uint16_t register_start_addr,uint16_t register_num);
-uint8_t* Modbus_Request_Write_Single_Register(uint8_t addr,uint16_t single_register_addr,uint16_t data);
-uint8_t* Modbus_Request_Write_Mul_Register(uint8_t addr,uint16_t register_start_addr,uint16_t register_num,uint16_t* data,uint8_t* total_num);
+uint8_t *Modbus_Request_Read_Register(uint8_t addr, uint16_t register_start_addr, uint16_t register_num);
+uint8_t *Modbus_Request_Write_Single_Register(uint8_t addr, uint16_t single_register_addr, uint16_t data);
+uint8_t *Modbus_Request_Write_Mul_Register(uint8_t addr, uint16_t register_start_addr, uint16_t register_num, uint16_t *data, uint8_t *total_num);
 
 void Modbus_Response_Register(void);
-uint16_t CRC16_Check_Sum(uint8_t* pchMessage, uint32_t dwLength);
-														/*************************************************************
-														**																													**
-														**											MOTOR_DRV750												**
-														**																													**
-														*************************************************************/
+uint16_t CRC16_Check_Sum(uint8_t *pchMessage, uint32_t dwLength);
+/*************************************************************
+**																													**
+**											MOTOR_DRV750												**
+**																													**
+*************************************************************/
 /*************************************************************
 **																													**
 **				P00 Group Servo Drive/Motor Parameters						**
@@ -629,7 +629,7 @@ uint16_t CRC16_Check_Sum(uint8_t* pchMessage, uint32_t dwLength);
 
 /*************************************************************
 **																													**
-**			P12 group accessibility															**	
+**			P12 group accessibility															**
 **																													**
 *************************************************************/
 #define P12_00 0x4B0
@@ -700,11 +700,11 @@ uint16_t CRC16_Check_Sum(uint8_t* pchMessage, uint32_t dwLength);
 #define P13_42 0x53E
 #define P13_43 0x53F
 
-														/*************************************************************
-														**																													**
-														**											MOTOR_D_AI													**
-														**																													**
-														*************************************************************/
+/*************************************************************
+**																													**
+**											MOTOR_D_AI													**
+**																													**
+*************************************************************/
 /********************************address_protocl***********************************/
 // Parameter function group number (hexadecimal) 256 + address number in parameter group (decimal) = Modbus register control address (decimal system)
 /*************************************************************
@@ -1138,9 +1138,9 @@ uint16_t CRC16_Check_Sum(uint8_t* pchMessage, uint32_t dwLength);
 #define CMD_WRITE_SINGLE_DATA 0x06
 #define CMD_WRITE_MULTIPLE_DATA 0x10
 
-#define FIX_LENGTH 8 
+#define FIX_LENGTH 8
 /*********************************CRC16************************************/
 // unsigned short Modbus_CRC16(volatile uint8_t* pDataBuffer, unsigned long usDataLen);
-unsigned short Modbus_CRC16_List(volatile unsigned char* pDataBuffer, unsigned long usDataLen);
+unsigned short Modbus_CRC16_List(volatile unsigned char *pDataBuffer, unsigned long usDataLen);
 
 #endif

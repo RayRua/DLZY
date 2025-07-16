@@ -220,8 +220,6 @@ void Sent_Date_PC(void)
 {
     ImformationCopy( & uart1);//send
     USART1_Send(uart1.tx_buf, 1);
-
-    
 }
 
 //void Get_PC_Date(void)
@@ -277,8 +275,7 @@ void gimbal_protocol(COMMUNICATE* p){
 			if(fabs(gimbal.pitch)<0.1)gimbal.pitch=0;
 			if(gimbal.pitch>GIMBAL_PITCH_MAX_RPM)gimbal.pitch=GIMBAL_PITCH_MAX_RPM;
 			if(gimbal.pitch<-GIMBAL_PITCH_MAX_RPM)gimbal.pitch=-GIMBAL_PITCH_MAX_RPM; 
-			}
-			
+		}	
 			master_receive_flag=1;
  }
 }

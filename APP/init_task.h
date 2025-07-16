@@ -3,6 +3,4 @@
 
 void init_task(void);
 
-
-
 #endif

@@ -31,54 +31,49 @@ volatile u8 irq_enabled = 0;
 
 /*重要信息：3个分别对应ID：9*/
 
-
 void GPIO_init(void)
 {
 	GPIO_InitTypeDef GPIO_InitStruct = {0};
-	
 	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);
-	
 	GPIO_InitStruct.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_5;
 	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_IN;
 	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_NOPULL;
-	
 	GPIO_Init(GPIOD, &GPIO_InitStruct);
 }
 
 int main(void)
-{          
-		// 1. 首先配置中断优先级分组
-   	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);//设置系统中断优先级分组为2
-		
-		// 2. 初始化基础外设（不使能中断）
-		bsp_init_no_irq();
-		
-		// 3.  
-		motor_init();
-	
-		GPIO_init();
-		//ins_init();
-		
-		Watchdog_Init();
-		// 4. 配置外设中断（在启动内核前配置好）
-		bsp_enable_irq(); 
-		
-		// 5. 创建任务
-		init_task();
-		delay_ms(10);
-		
-		// 初始化PD4和PD5为输入
-//		RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);
-//		pin_init(GPIOD, GPIO_Pin_4, GPIO_Mode_IN, GPIO_OType_PP, GPIO_PuPd_NOPULL);
-//		pin_init(GPIOD, GPIO_Pin_5, GPIO_Mode_IN, GPIO_OType_PP, GPIO_PuPd_NOPULL);
+{
+	// 1. 首先配置中断优先级分组
+	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2); // 设置系统中断优先级分组为2
 
+	// 2. 初始化基础外设（不使能中断）
+	bsp_init_no_irq();
 
-		// 可在此处使用pd4_level和pd5_level变量
-		
-		// 6. 启动调度器（会自动开启全局中断）            
-		osKernelStart();
-		
-    while(1)
-    {
-    }
+	// 3.
+	motor_init();
+
+	GPIO_init();
+	// ins_init();
+
+	Watchdog_Init();
+	// 4. 配置外设中断（在启动内核前配置好）
+	bsp_enable_irq();
+
+	// 5. 创建任务
+	init_task();
+	delay_ms(10);
+
+	// 初始化PD4和PD5为输入
+	//		RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);
+	//		pin_init(GPIOD, GPIO_Pin_4, GPIO_Mode_IN, GPIO_OType_PP, GPIO_PuPd_NOPULL);
+	//		pin_init(GPIOD, GPIO_Pin_5, GPIO_Mode_IN, GPIO_OType_PP, GPIO_PuPd_NOPULL);
+
+	// 可在此处使用pd4_level和pd5_level变量
+
+	// 6. 启动调度器（会自动开启全局中断）
+	osKernelStart();
+
+	while (1)
+	{
+	}
 }

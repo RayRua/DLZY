@@ -9,12 +9,8 @@ extern D_AI_Current_Status_t pitch_current_status;
 uint8_t pd4_level;
 uint8_t pd5_level;
 
-
-
 void detect_task()
-	{
-				pd4_level = GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_6);
-				pd5_level	= GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_5);
-	}
- 
-
+{
+	pd4_level = GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_6);
+	pd5_level = GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_5);
+}

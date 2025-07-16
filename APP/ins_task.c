@@ -6,51 +6,54 @@
 #include "motor_status.h"
 #include "watchdog.h"
 
-#define ACC_UPDATE		0x01
-#define GYRO_UPDATE		0x02
-#define ANGLE_UPDATE	0x04
-#define MAG_UPDATE		0x08
-#define READ_UPDATE		0x80
+#define ACC_UPDATE 0x01
+#define GYRO_UPDATE 0x02
+#define ANGLE_UPDATE 0x04
+#define MAG_UPDATE 0x08
+#define READ_UPDATE 0x80
 static volatile char s_cDataUpdate = 0, s_cCmd = 0xff;
 static void SensorDataUpdata(uint32_t uiReg, uint32_t uiRegNum);
 static void Delayms(uint16_t ucMs);
 
 double gimbal_angle[3];
-typedef enum{
-	ANGLE_ROLL=0,
+typedef enum
+{
+	ANGLE_ROLL = 0,
 	ANGLE_PITCH,
 	ANGLE_YAW
-}Angle;
-void ins_init(void){
-		WitInit(WIT_PROTOCOL_MODBUS, 0x50);
-		WitSerialWriteRegister(Uart2_Send);//×¢²áÐ´»Øµ÷º¯Êý    ´®¿Ú1½ÓÊÕÊý¾Ýµ÷ÓÃ SensorUartSendº¯Êý
-		WitRegisterCallBack(SensorDataUpdata);//×¢²á»ñÈ¡´«¸ÐÆ÷Êý¾Ý»Øµ÷º¯Êý   ´®¿Ú2½ÓÊÕÊý¾Ýµ÷ÓÃSensorDataUpdataº¯Êý
-		WitDelayMsRegister(Delayms);//×¢²áÑÓÊ±»Øµ÷º¯Êý
+} Angle;
+void ins_init(void)
+{
+	WitInit(WIT_PROTOCOL_MODBUS, 0x50);
+	WitSerialWriteRegister(Uart2_Send);	   // ×¢ï¿½ï¿½Ð´ï¿½Øµï¿½ï¿½ï¿½ï¿½ï¿½    ï¿½ï¿½ï¿½ï¿½1ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ýµï¿½ï¿½ï¿½ SensorUartSendï¿½ï¿½ï¿½ï¿½
+	WitRegisterCallBack(SensorDataUpdata); // ×¢ï¿½ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý»Øµï¿½ï¿½ï¿½ï¿½ï¿½   ï¿½ï¿½ï¿½ï¿½2ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ýµï¿½ï¿½ï¿½SensorDataUpdataï¿½ï¿½ï¿½ï¿½
+	WitDelayMsRegister(Delayms);		   // ×¢ï¿½ï¿½ï¿½ï¿½Ê±ï¿½Øµï¿½ï¿½ï¿½ï¿½ï¿½
 };
 
-static void SensorDataUpdata(uint32_t uiReg, uint32_t uiRegNum)//´«¸ÐÆ÷Êý¾ÝÉý¼¶
+static void SensorDataUpdata(uint32_t uiReg, uint32_t uiRegNum) // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 {
 	int i;
-    for(i = 0; i < uiRegNum; i++)
-    {
-        switch(uiReg)//ÅÐ¶ÏuiRegµÄÊý¾ÝÊÇÊ²Ã´À´½øÐÐÑ¡Ôñ¶ÔÓ¦µÄ²Ù×÷
-        {           
-            case Roll:
-								
-									gimbal_angle[ANGLE_ROLL]=sReg[uiReg] / 32768.0f * 180.0f;
-									gimbal_angle[ANGLE_PITCH]=sReg[uiReg+1] / 32768.0f * 180.0f;
-									break;
-        }
+	for (i = 0; i < uiRegNum; i++)
+	{
+		switch (uiReg) // ï¿½Ð¶ï¿½uiRegï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê²Ã´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¡ï¿½ï¿½ï¿½Ó¦ï¿½Ä²ï¿½ï¿½ï¿½
+		{
+		case Roll:
+
+			gimbal_angle[ANGLE_ROLL] = sReg[uiReg] / 32768.0f * 180.0f;
+			gimbal_angle[ANGLE_PITCH] = sReg[uiReg + 1] / 32768.0f * 180.0f;
+			break;
+		}
 		uiReg++;
-    }
+	}
 }
-static void Delayms(uint16_t ucMs)//ÑÓÊ±³ÌÐò
+static void Delayms(uint16_t ucMs) // ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½
 {
 	osDelay(ucMs);
 }
 
-void ins_task(void){
-//	if(cmd_lost_imu_flag==1)
-//	WitRedStart();
+void ins_task(void)
+{
+	//	if(cmd_lost_imu_flag==1)
+	//	WitRedStart();
 	WitRedRoll_Pitch();
-	};
+};
